@@ -38,7 +38,8 @@ void main() async {
     },
   );
 
-  app.use('/api/sensitive', strictLimiter);
+  // Apply strict limiter globally (affects all routes after this point)
+  app.use(strictLimiter);
 
   app.post('/api/sensitive/data', (req, res) {
     return res.json({
@@ -51,13 +52,15 @@ void main() async {
     return res.json({'message': 'Cleanup completed'});
   });
 
-  // Different algorithm example - sliding window
-  app.use('/api/uploads', rateLimit(
+  // Different algorithm example - sliding window for uploads
+  final uploadLimiter = rateLimit(
     max: 10,
     windowMs: Duration(minutes: 5),
     algorithm: RateLimitAlgorithm.slidingWindow,
     message: 'Upload rate limit exceeded',
-  ));
+  );
+
+  app.use(uploadLimiter);
 
   app.post('/api/uploads/file', (req, res) {
     return res.json({

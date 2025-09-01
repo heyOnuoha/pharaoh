@@ -9,28 +9,28 @@ import 'sliding_window.dart';
 class RateLimitOptions {
   /// Maximum number of requests allowed
   final int max;
-  
+
   /// Time window for rate limiting
   final Duration windowMs;
-  
+
   /// Custom message when rate limit is exceeded
   final String? message;
-  
+
   /// Custom status code when rate limit is exceeded (default: 429)
   final int statusCode;
-  
+
   /// Function to generate a unique key for each client
   final String Function(Request req)? keyGenerator;
-  
+
   /// Function to skip rate limiting for certain requests
   final bool Function(Request req)? skip;
-  
+
   /// Headers to include in the response
   final bool standardHeaders;
-  
+
   /// Legacy headers (X-RateLimit-*)
   final bool legacyHeaders;
-  
+
   /// Rate limiting algorithm to use
   final RateLimitAlgorithm algorithm;
 
@@ -54,7 +54,7 @@ enum RateLimitAlgorithm {
 }
 
 /// Rate limiting middleware for Pharaoh
-/// 
+///
 /// Example usage:
 /// ```dart
 /// app.use(rateLimit(
@@ -85,7 +85,7 @@ Middleware rateLimit({
     legacyHeaders: legacyHeaders,
     algorithm: algorithm,
   );
-  
+
   return RateLimitMiddleware(options).middleware;
 }
 
@@ -94,11 +94,11 @@ Middleware rateLimit({
 class RateLimitMiddleware {
   final RateLimitOptions options;
   late final RateLimiter _limiter;
-  
+
   RateLimitMiddleware(this.options) {
     _limiter = _createLimiter();
   }
-  
+
   RateLimiter _createLimiter() {
     switch (options.algorithm) {
       case RateLimitAlgorithm.tokenBucket:
@@ -114,56 +114,59 @@ class RateLimitMiddleware {
         );
     }
   }
-  
+
   Middleware get middleware => (req, res, next) async {
-    // Skip rate limiting if skip function returns true
-    if (options.skip?.call(req) == true) {
-      return next(req);
-    }
-    
-    final key = _generateKey(req);
-    final allowed = _limiter.allowRequest(key);
-    
-    // Add rate limit headers
-    _addHeaders(res, key);
-    
-    if (!allowed) {
-      final message = options.message ?? 'Too many requests, please try again later.';
-      return next(res.status(options.statusCode).json({'error': message}));
-    }
-    
-    return next(req);
-  };
-  
+        // Skip rate limiting if skip function returns true
+        if (options.skip?.call(req) == true) {
+          return next(req);
+        }
+
+        final key = _generateKey(req);
+        final allowed = _limiter.allowRequest(key);
+
+        // Add rate limit headers
+        _addHeaders(res, key);
+
+        if (!allowed) {
+          final message =
+              options.message ?? 'Too many requests, please try again later.';
+          return next(res.status(options.statusCode).json({'error': message}));
+        }
+
+        return next(req);
+      };
+
   String _generateKey(Request req) {
     if (options.keyGenerator != null) {
       return options.keyGenerator!(req);
     }
-    
+
     // Default key generation based on IP address
     return req.ipAddr;
   }
-  
+
   void _addHeaders(Response res, String key) {
     final remaining = _limiter.getRemainingRequests(key);
     final resetTime = _limiter.getResetTime(key);
-    
+
     if (options.standardHeaders) {
       res.header('RateLimit-Limit', options.max.toString());
       res.header('RateLimit-Remaining', remaining.toString());
       if (resetTime != null) {
-        res.header('RateLimit-Reset', (resetTime.millisecondsSinceEpoch ~/ 1000).toString());
+        res.header('RateLimit-Reset',
+            (resetTime.millisecondsSinceEpoch ~/ 1000).toString());
       }
     }
-    
+
     if (options.legacyHeaders) {
       res.header('X-RateLimit-Limit', options.max.toString());
       res.header('X-RateLimit-Remaining', remaining.toString());
       if (resetTime != null) {
-        res.header('X-RateLimit-Reset', (resetTime.millisecondsSinceEpoch ~/ 1000).toString());
+        res.header('X-RateLimit-Reset',
+            (resetTime.millisecondsSinceEpoch ~/ 1000).toString());
       }
     }
-    
+
     // Add Retry-After header when rate limited
     if (remaining <= 0 && resetTime != null) {
       final retryAfter = resetTime.difference(DateTime.now()).inSeconds;

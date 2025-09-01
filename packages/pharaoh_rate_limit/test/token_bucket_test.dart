@@ -27,13 +27,13 @@ void main() {
       );
 
       expect(limiter.getRemainingRequests('test-key'), equals(3));
-      
+
       limiter.allowRequest('test-key');
       expect(limiter.getRemainingRequests('test-key'), equals(2));
-      
+
       limiter.allowRequest('test-key');
       expect(limiter.getRemainingRequests('test-key'), equals(1));
-      
+
       limiter.allowRequest('test-key');
       expect(limiter.getRemainingRequests('test-key'), equals(0));
     });
@@ -106,7 +106,7 @@ void main() {
 
       // Cleanup should work without errors
       limiter.cleanup();
-      
+
       // Verify cleanup method exists and runs
       expect(limiter, isA<TokenBucketRateLimiter>());
     });

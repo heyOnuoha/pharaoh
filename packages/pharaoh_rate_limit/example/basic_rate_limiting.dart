@@ -33,7 +33,7 @@ void main() async {
     message: 'Too many authentication attempts, please try again later.',
     statusCode: 429,
   );
-  
+
   app.use(authLimiter);
 
   app.post('/auth/login', (req, res) {

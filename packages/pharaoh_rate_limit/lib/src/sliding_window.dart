@@ -1,19 +1,19 @@
 import 'rate_limiter.dart';
 
 /// Sliding window rate limiter implementation
-/// 
+///
 /// Tracks requests in a sliding time window and enforces limits
 /// based on the number of requests within that window.
 class SlidingWindowRateLimiter implements RateLimiter {
   final int _maxRequests;
   final Duration _windowSize;
   final Map<String, _SlidingWindow> _windows = {};
-  
+
   SlidingWindowRateLimiter({
     required int maxRequests,
     required Duration windowSize,
-  }) : _maxRequests = maxRequests,
-       _windowSize = windowSize;
+  })  : _maxRequests = maxRequests,
+        _windowSize = windowSize;
 
   @override
   bool allowRequest(String key) {
@@ -37,11 +37,10 @@ class SlidingWindowRateLimiter implements RateLimiter {
   void cleanup() {
     final now = DateTime.now();
     final cutoff = now.subtract(_windowSize.multiply(2));
-    
+
     _windows.removeWhere((key, window) {
       window._cleanup();
-      return window.requests.isEmpty || 
-             window.requests.first.isBefore(cutoff);
+      return window.requests.isEmpty || window.requests.first.isBefore(cutoff);
     });
   }
 
@@ -50,7 +49,7 @@ class SlidingWindowRateLimiter implements RateLimiter {
     if (window == null) {
       return _windows[key] = _SlidingWindow(_maxRequests, _windowSize);
     }
-    
+
     window._cleanup();
     return window;
   }
@@ -65,12 +64,12 @@ class _SlidingWindow {
 
   bool allowRequest() {
     _cleanup();
-    
+
     if (requests.length < maxRequests) {
       requests.add(DateTime.now());
       return true;
     }
-    
+
     return false;
   }
 
@@ -81,7 +80,7 @@ class _SlidingWindow {
   void _cleanup() {
     final now = DateTime.now();
     final cutoff = now.subtract(windowSize);
-    
+
     requests.removeWhere((timestamp) => timestamp.isBefore(cutoff));
   }
 }

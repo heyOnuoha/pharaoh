@@ -25,10 +25,10 @@ void main() {
       );
 
       expect(limiter.getRemainingRequests('test-key'), equals(2));
-      
+
       limiter.allowRequest('test-key');
       expect(limiter.getRemainingRequests('test-key'), equals(1));
-      
+
       limiter.allowRequest('test-key');
       expect(limiter.getRemainingRequests('test-key'), equals(0));
     });

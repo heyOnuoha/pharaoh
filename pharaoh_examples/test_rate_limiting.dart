@@ -35,7 +35,7 @@ Future<void> testBasicRateLimit(HttpClient client) async {
       final request = await client
           .getUrl(Uri.parse('http://localhost:3000/api/public/status'));
       final response = await request.close();
-      final body = await response.transform(utf8.decoder).join();
+      await response.transform(utf8.decoder).join(); // Consume response body
 
       print(
           'Request $i: ${response.statusCode} - ${response.headers['ratelimit-remaining']?[0] ?? 'N/A'} remaining');
